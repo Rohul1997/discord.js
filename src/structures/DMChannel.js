@@ -10,6 +10,10 @@ const MessageStore = require('../stores/MessageStore');
 class DMChannel extends Channel {
   constructor(client, data) {
     super(client, data);
+    /**
+     * A collection containing the messages sent to this channel
+     * @type {MessageStore<Snowflake, Message>}
+     */
     this.messages = new MessageStore(this);
     this._typing = new Map();
   }
@@ -21,7 +25,7 @@ class DMChannel extends Channel {
      * The recipient on the other end of the DM
      * @type {User}
      */
-    this.recipient = this.client.users.create(data.recipients[0]);
+    this.recipient = this.client.users.add(data.recipients[0]);
 
     this.lastMessageID = data.last_message_id;
   }
@@ -40,6 +44,7 @@ class DMChannel extends Channel {
 
   // These are here only for documentation purposes - they are implemented by TextBasedChannel
   /* eslint-disable no-empty-function */
+  get lastMessage() {}
   send() {}
   search() {}
   startTyping() {}

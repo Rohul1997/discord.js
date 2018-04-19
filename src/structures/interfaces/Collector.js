@@ -1,4 +1,5 @@
 const Collection = require('../../util/Collection');
+const Util = require('../../util/Util');
 const EventEmitter = require('events');
 
 /**
@@ -78,15 +79,14 @@ class Collector extends EventEmitter {
     const collect = this.collect(...args);
 
     if (collect && this.filter(...args, this.collected)) {
-      this.collected.set(collect.key, collect.value);
+      this.collected.set(collect, args[0]);
 
       /**
        * Emitted whenever an element is collected.
        * @event Collector#collect
-       * @param {*} element The element that got collected
        * @param {...*} args The arguments emitted by the listener
        */
-      this.emit('collect', collect.value, ...args);
+      this.emit('collect', ...args);
     }
     this.checkEnd();
   }
@@ -101,23 +101,20 @@ class Collector extends EventEmitter {
 
     const dispose = this.dispose(...args);
     if (!dispose || !this.filter(...args) || !this.collected.has(dispose)) return;
-
-    const value = this.collected.get(dispose);
     this.collected.delete(dispose);
 
     /**
-     * Emitted whenever an element has been disposed.
+     * Emitted whenever an element is disposed of.
      * @event Collector#dispose
-     * @param {*} element The element that was disposed
      * @param {...*} args The arguments emitted by the listener
      */
-    this.emit('dispose', value, ...args);
+    this.emit('dispose', ...args);
     this.checkEnd();
   }
 
   /**
    * Returns a promise that resolves with the next collected element;
-   * rejects with collected elements if the collector finishes without receving a next element
+   * rejects with collected elements if the collector finishes without receiving a next element
    * @type {Promise}
    * @readonly
    */
@@ -174,6 +171,10 @@ class Collector extends EventEmitter {
   checkEnd() {
     const reason = this.endReason();
     if (reason) this.stop(reason);
+  }
+
+  toJSON() {
+    return Util.flatten(this);
   }
 
   /* eslint-disable no-empty-function, valid-jsdoc */

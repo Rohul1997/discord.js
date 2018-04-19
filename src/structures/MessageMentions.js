@@ -1,4 +1,5 @@
 const Collection = require('../util/Collection');
+const Util = require('../util/Util');
 const GuildMember = require('./GuildMember');
 
 /**
@@ -22,7 +23,7 @@ class MessageMentions {
       } else {
         this.users = new Collection();
         for (const mention of users) {
-          let user = message.client.users.create(mention);
+          let user = message.client.users.add(mention);
           this.users.set(user.id, user);
         }
       }
@@ -138,6 +139,13 @@ class MessageMentions {
     }
 
     return false;
+  }
+
+  toJSON() {
+    return Util.flatten(this, {
+      members: true,
+      channels: true,
+    });
   }
 }
 

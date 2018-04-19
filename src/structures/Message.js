@@ -52,14 +52,7 @@ class Message extends Base {
      * The author of the message
      * @type {User}
      */
-    this.author = this.client.users.create(data.author, !data.webhook_id);
-
-    /**
-     * Represents the author of the message as a guild member.
-     * Only available if the message comes from a guild where the author is still a member
-     * @type {?GuildMember}
-     */
-    this.member = this.guild ? this.guild.member(this.author) || null : null;
+    this.author = this.client.users.add(data.author, !data.webhook_id);
 
     /**
      * Whether or not this message is pinned
@@ -121,7 +114,7 @@ class Message extends Base {
     this.reactions = new ReactionStore(this);
     if (data.reactions && data.reactions.length > 0) {
       for (const reaction of data.reactions) {
-        this.reactions.create(reaction);
+        this.reactions.add(reaction);
       }
     }
 
@@ -138,14 +131,14 @@ class Message extends Base {
     this.webhookID = data.webhook_id || null;
 
     /**
-     * Supplimental application information for group activities
+     * Supplemental application information for group activities
      * @type {?ClientApplication}
      */
     this.application = data.application ? new ClientApplication(this.client, data.application) : null;
 
     /**
      * Group activity
-     * @type {?Object}
+     * @type {?MessageActivity}
      */
     this.activity = data.activity ? {
       partyID: data.activity.party_id,
@@ -199,6 +192,16 @@ class Message extends Base {
       'mentions_roles' in data ? data.mentions_roles : this.mentions.roles,
       'mention_everyone' in data ? data.mention_everyone : this.mentions.everyone
     );
+  }
+
+  /**
+   * Represents the author of the message as a guild member.
+   * Only available if the message comes from a guild where the author is still a member
+   * @type {?GuildMember}
+   * @readonly
+   */
+  get member() {
+    return this.guild ? this.guild.member(this.author) || null : null;
   }
 
   /**
@@ -369,7 +372,7 @@ class Message extends Base {
    * @example
    * // Update the content of a message
    * message.edit('This is my new content!')
-   *   .then(msg => console.log(`Updated the content of a message from ${msg.author}`))
+   *   .then(msg => console.log(`Updated the content of a message to ${msg.content}`))
    *   .catch(console.error);
    */
   async edit(content, options) {
@@ -414,6 +417,16 @@ class Message extends Base {
    * Adds a reaction to the message.
    * @param {EmojiIdentifierResolvable} emoji The emoji to react with
    * @returns {Promise<MessageReaction>}
+   * @example
+   * // React to a message with a unicode emoji
+   * message.react('🤔')
+   *   .then(console.log)
+   *   .catch(console.error);
+   * @example
+   * // React to a message with a custom emoji
+   * message.react(message.guild.emojis.get('123456789012345678'))
+   *   .then(console.log)
+   *   .catch(console.error);
    */
   react(emoji) {
     emoji = this.client.emojis.resolveIdentifier(emoji);
@@ -430,15 +443,6 @@ class Message extends Base {
   }
 
   /**
-   * Removes all reactions from a message.
-   * @returns {Promise<Message>}
-   */
-  clearReactions() {
-    return this.client.api.channels(this.channel.id).messages(this.id).reactions.delete()
-      .then(() => this);
-  }
-
-  /**
    * Deletes the message.
    * @param {Object} [options] Options
    * @param {number} [options.timeout=0] How long to wait to delete the message in milliseconds
@@ -447,7 +451,7 @@ class Message extends Base {
    * @example
    * // Delete a message
    * message.delete()
-   *   .then(msg => console.log(`Deleted message from ${msg.author}`))
+   *   .then(msg => console.log(`Deleted message from ${msg.author.username}`))
    *   .catch(console.error);
    */
   delete({ timeout = 0, reason } = {}) {
@@ -476,7 +480,7 @@ class Message extends Base {
    * @example
    * // Reply to a message
    * message.reply('Hey, I\'m a reply!')
-   *   .then(msg => console.log(`Sent a reply to ${msg.author}`))
+   *   .then(msg => console.log(`Sent a reply to ${msg.author.username}`))
    *   .catch(console.error);
    */
   reply(content, options) {
@@ -551,6 +555,18 @@ class Message extends Base {
    */
   toString() {
     return this.content;
+  }
+
+  toJSON() {
+    return super.toJSON({
+      channel: 'channelID',
+      author: 'authorID',
+      application: 'applicationID',
+      guild: 'guildID',
+      cleanContent: true,
+      member: false,
+      reactions: false,
+    });
   }
 }
 

@@ -17,7 +17,7 @@ class Invite extends Base {
      * The guild the invite is for
      * @type {Guild}
      */
-    this.guild = this.client.guilds.create(data.guild, false);
+    this.guild = this.client.guilds.add(data.guild, false);
 
     /**
      * The code for this invite
@@ -76,16 +76,16 @@ class Invite extends Base {
     if (data.inviter) {
       /**
        * The user who created this invite
-       * @type {User}
+       * @type {?User}
        */
-      this.inviter = this.client.users.create(data.inviter);
+      this.inviter = this.client.users.add(data.inviter);
     }
 
     /**
      * The channel the invite is for
      * @type {GuildChannel}
      */
-    this.channel = this.client.channels.create(data.channel, this.guild, false);
+    this.channel = this.client.channels.add(data.channel, this.guild, false);
 
     /**
      * The timestamp the invite was created at
@@ -148,6 +148,21 @@ class Invite extends Base {
    */
   toString() {
     return this.url;
+  }
+
+  toJSON() {
+    return super.toJSON({
+      url: true,
+      expiresTimestamp: true,
+      presenceCount: false,
+      memberCount: false,
+      textChannelCount: false,
+      voiceChannelCount: false,
+      uses: false,
+      channel: 'channelID',
+      inviter: 'inviterID',
+      guild: 'guildID',
+    });
   }
 }
 

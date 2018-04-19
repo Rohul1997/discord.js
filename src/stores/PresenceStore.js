@@ -3,7 +3,6 @@ const { Presence } = require('../structures/Presence');
 
 /**
  * Stores presences.
- * @private
  * @extends {DataStore}
  */
 class PresenceStore extends DataStore {
@@ -11,9 +10,9 @@ class PresenceStore extends DataStore {
     super(client, iterable, Presence);
   }
 
-  create(data, cache) {
+  add(data, cache) {
     const existing = this.get(data.user.id);
-    return existing ? existing.patch(data) : super.create(data, cache, { id: data.user.id });
+    return existing ? existing.patch(data) : super.add(data, cache, { id: data.user.id });
   }
 
   /**
@@ -30,10 +29,10 @@ class PresenceStore extends DataStore {
     * @returns {?Presence}
     */
   resolve(presence) {
-    const presenceResolveable = super.resolve(presence);
-    if (presenceResolveable) return presenceResolveable;
-    const UserResolveable = this.client.users.resolveID(presence);
-    return super.resolve(UserResolveable) || null;
+    const presenceResolvable = super.resolve(presence);
+    if (presenceResolvable) return presenceResolvable;
+    const UserResolvable = this.client.users.resolveID(presence);
+    return super.resolve(UserResolvable) || null;
   }
 
   /**
@@ -42,10 +41,10 @@ class PresenceStore extends DataStore {
     * @returns {?Snowflake}
     */
   resolveID(presence) {
-    const presenceResolveable = super.resolveID(presence);
-    if (presenceResolveable) return presenceResolveable;
-    const userResolveable = this.client.users.resolveID(presence);
-    return this.has(userResolveable) ? userResolveable : null;
+    const presenceResolvable = super.resolveID(presence);
+    if (presenceResolvable) return presenceResolvable;
+    const userResolvable = this.client.users.resolveID(presence);
+    return this.has(userResolvable) ? userResolvable : null;
   }
 }
 

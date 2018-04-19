@@ -1,6 +1,7 @@
 const Collection = require('../util/Collection');
 const Snowflake = require('../util/Snowflake');
 const Webhook = require('./Webhook');
+const Util = require('../util/Util');
 
 /**
  * The target type of an entry, e.g. `GUILD`. Here are the available types:
@@ -106,7 +107,7 @@ const Actions = {
  */
 class GuildAuditLogs {
   constructor(guild, data) {
-    if (data.users) for (const user of data.users) guild.client.users.create(user);
+    if (data.users) for (const user of data.users) guild.client.users.add(user);
     /**
      * Cached webhooks
      * @type {Collection<Snowflake, Webhook>}
@@ -148,7 +149,7 @@ class GuildAuditLogs {
    * * An invite
    * * A webhook
    * * An object where the keys represent either the new value or the old value
-   * @typedef {?Object|Guild|User|Role|Emoji|Invite|Webhook} AuditLogEntryTarget
+   * @typedef {?Object|Guild|User|Role|GuildEmoji|Invite|Webhook} AuditLogEntryTarget
    */
 
   /**
@@ -219,6 +220,10 @@ class GuildAuditLogs {
     ].includes(action)) return 'UPDATE';
 
     return 'ALL';
+  }
+
+  toJSON() {
+    return Util.flatten(this);
   }
 }
 
@@ -370,6 +375,10 @@ class GuildAuditLogsEntry {
    */
   get createdAt() {
     return new Date(this.createdTimestamp);
+  }
+
+  toJSON() {
+    return Util.flatten(this, { createdTimestamp: true });
   }
 }
 

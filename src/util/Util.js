@@ -13,26 +13,60 @@ class Util {
   }
 
   /**
+   * Flatten an object. Any properties that are collections will get converted to an array of keys.
+   * @param {Object} obj The object to flatten.
+   * @param {...Object<string, boolean|string>} [props] Specific properties to include/exclude.
+   * @returns {Object}
+   */
+  static flatten(obj, ...props) {
+    const isObject = d => typeof d === 'object' && d !== null;
+    if (!isObject(obj)) return obj;
+
+    props = Object.assign(...Object.keys(obj).filter(k => !k.startsWith('_')).map(k => ({ [k]: true })), ...props);
+
+    const out = {};
+
+    for (let [prop, newProp] of Object.entries(props)) {
+      if (!newProp) continue;
+      newProp = newProp === true ? prop : newProp;
+
+      const element = obj[prop];
+      const elemIsObj = isObject(element);
+      const valueOf = elemIsObj && typeof element.valueOf === 'function' ? element.valueOf() : null;
+
+      // If it's a collection, make the array of keys
+      if (element instanceof require('./Collection')) out[newProp] = Array.from(element.keys());
+      // If it's an array, flatten each element
+      else if (Array.isArray(element)) out[newProp] = element.map(e => Util.flatten(e));
+      // If it's an object with a primitive `valueOf`, use that value
+      else if (valueOf && !isObject(valueOf)) out[newProp] = valueOf;
+      // If it's a primitive
+      else if (!elemIsObj) out[newProp] = element;
+    }
+
+    return out;
+  }
+
+  /**
    * Splits a string into multiple chunks at a designated character that do not exceed a specific length.
    * @param {string} text Content to split
    * @param {SplitOptions} [options] Options controlling the behaviour of the split
    * @returns {string|string[]}
    */
-  static splitMessage(text, { maxLength = 1950, char = '\n', prepend = '', append = '' } = {}) {
+  static splitMessage(text, { maxLength = 2000, char = '\n', prepend = '', append = '' } = {}) {
     if (text.length <= maxLength) return text;
     const splitText = text.split(char);
     if (splitText.length === 1) throw new RangeError('SPLIT_MAX_LEN');
-    const messages = [''];
-    let msg = 0;
-    for (let i = 0; i < splitText.length; i++) {
-      if (messages[msg].length + splitText[i].length + 1 > maxLength) {
-        messages[msg] += append;
-        messages.push(prepend);
-        msg++;
+    const messages = [];
+    let msg = '';
+    for (const chunk of splitText) {
+      if (msg && (msg + char + chunk + append).length > maxLength) {
+        messages.push(msg + append);
+        msg = prepend;
       }
-      messages[msg] += (messages[msg].length > 0 && messages[msg] !== prepend ? char : '') + splitText[i];
+      msg += (msg && msg !== prepend ? char : '') + chunk;
     }
-    return messages.filter(m => m);
+    return messages.concat(msg).filter(m => m);
   }
 
   /**
@@ -125,7 +159,7 @@ class Util {
       if (!has(given, key) || given[key] === undefined) {
         given[key] = def[key];
       } else if (given[key] === Object(given[key])) {
-        given[key] = this.mergeDefault(def[key], given[key]);
+        given[key] = Util.mergeDefault(def[key], given[key]);
       }
     }
 
@@ -139,7 +173,7 @@ class Util {
    * @private
    */
   static convertToBuffer(ab) {
-    if (typeof ab === 'string') ab = this.str2ab(ab);
+    if (typeof ab === 'string') ab = Util.str2ab(ab);
     return Buffer.from(ab);
   }
 
@@ -235,6 +269,7 @@ class Util {
    * - `GREEN`
    * - `BLUE`
    * - `PURPLE`
+   * - `LUMINOUS_VIVID_PINK`
    * - `GOLD`
    * - `ORANGE`
    * - `RED`
@@ -245,6 +280,7 @@ class Util {
    * - `DARK_GREEN`
    * - `DARK_BLUE`
    * - `DARK_PURPLE`
+   * - `DARK_VIVID_PINK`
    * - `DARK_GOLD`
    * - `DARK_ORANGE`
    * - `DARK_RED`
@@ -263,6 +299,7 @@ class Util {
   static resolveColor(color) {
     if (typeof color === 'string') {
       if (color === 'RANDOM') return Math.floor(Math.random() * (0xFFFFFF + 1));
+      if (color === 'DEFAULT') return 0;
       color = Colors[color] || parseInt(color.replace('#', ''), 16);
     } else if (color instanceof Array) {
       color = (color[0] << 16) + (color[1] << 8) + color[2];
@@ -282,8 +319,8 @@ class Util {
   static discordSort(collection) {
     return collection.sort((a, b) =>
       a.rawPosition - b.rawPosition ||
-      parseInt(a.id.slice(0, -10)) - parseInt(b.id.slice(0, -10)) ||
-      parseInt(a.id.slice(10)) - parseInt(b.id.slice(10))
+      parseInt(b.id.slice(0, -10)) - parseInt(a.id.slice(0, -10)) ||
+      parseInt(b.id.slice(10)) - parseInt(a.id.slice(10))
     );
   }
 
