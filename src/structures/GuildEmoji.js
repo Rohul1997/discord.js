@@ -16,12 +16,7 @@ class GuildEmoji extends Emoji {
      */
     this.guild = guild;
 
-    /**
-     * A collection of roles this emoji is active for (empty if all), mapped by role ID
-     * @type {GuildEmojiRoleStore<Snowflake, Role>}
-     */
-    this.roles = new GuildEmojiRoleStore(this);
-
+    this._roles = [];
     this._patch(data);
   }
 
@@ -45,8 +40,16 @@ class GuildEmoji extends Emoji {
 
   _clone() {
     const clone = super._clone();
-    clone.roles = this.roles.clone();
+    clone._roles = this._roles.slice();
     return clone;
+  }
+
+  /**
+   * A collection of roles this emoji is active for (empty if all), mapped by role ID
+   * @type {GuildEmojiRoleStore<Snowflake, Role>}
+   */
+  get roles() {
+    return new GuildEmojiRoleStore(this);
   }
 
   /**
@@ -85,12 +88,12 @@ class GuildEmoji extends Emoji {
 
   /**
    * Edits the emoji.
-   * @param {Guild} data The new data for the emoji
+   * @param {GuildEmojiEditData} data The new data for the emoji
    * @param {string} [reason] Reason for editing this emoji
    * @returns {Promise<GuildEmoji>}
    * @example
    * // Edit an emoji
-   * emoji.edit({name: 'newemoji'})
+   * emoji.edit({ name: 'newemoji' })
    *   .then(e => console.log(`Edited emoji ${e}`))
    *   .catch(console.error);
    */
